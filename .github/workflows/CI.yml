@@ -40,7 +40,7 @@ jobs:
         # This step ensures the unregistered package is available in the environment [[24]].
       - name: Install NemoUtils from GitHub
         run: |
-          julia -e 'using Pkg; Pkg.add(url="https://github.com/LauraBMo/NemoUtils.jl.git");'
+          julia -e 'using Pkg; Pkg.add(url="https://github.com/LauraBMo/NemoUtils.git");'
         shell: bash
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
