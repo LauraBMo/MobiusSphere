@@ -6,6 +6,13 @@ I(x) = [one(x) zero(x) zero(x);
 Z(x) = [zero(x), zero(x), zero(x)]
 
 _set(A) = real.(calcium_to_complex.(A))
+
+function _approx_zero(x)
+    ax = abs(x)
+    T = typeof(ax)
+    tol = sqrt(eps(float(one(T))))
+    return ax <= tol
+end
 # Step 1: Rotate B to north pole.
 # axis_rot1 = [-B[2],B[1],0] # = cross(B_rot, SVector(0, 0, 1))
 # angle_rot1 = acos(B[3]) # = angle(B_rot, SVector(0, 0, 1))
@@ -18,7 +25,22 @@ function Btonorth(B)
     M[3, 2] = y
     # @show _set(M)
     # rot = CT.AffineMap(I(x) + M + inv(1 + z) .* (M^2), Z(x))
-    rot = I(x) + M + inv(1 + z) .* (M^2)
+    denom = one(z) + z
+    if _approx_zero(denom)
+        axis = [one(x) - x * x, -x * y, -x * z]
+        axis_norm = sqrt(sum(abs2, axis))
+        if _approx_zero(axis_norm)
+            axis = [-x * y, one(y) - y * y, -y * z]
+            axis_norm = sqrt(sum(abs2, axis))
+        end
+        if _approx_zero(axis_norm)
+            throw(DomainError(B, "unable to determine rotation axis for south-pole input"))
+        end
+        axis_unit = axis ./ axis_norm
+        rot = 2 .* (axis_unit * axis_unit') .- I(x)
+    else
+        rot = I(x) + M + inv(denom) .* (M^2)
+    end
     # @show _set(rot)
     # @show _set(rot*B)
     return rot
@@ -41,6 +63,9 @@ function Gtoone_step1(B, G)
     a, b, c = B
     x, y, z = G
     d = complex_normal_form(_norm(_det(x, z, a, c), _det(y, z, b, c)))
+    if _approx_zero(d)
+        return Z(x)
+    end
     λ = -1 + (c - z) * inv(d)
     # tr = CT.AffineMap(I(x), λ .* B)
     tr = λ .* B
