@@ -1,6 +1,6 @@
 # runtests.jl
 using Test
-# using LinearAlgebra
+using LinearAlgebra
 # using StaticArrays
 using MobiusSphere
 
@@ -61,6 +61,17 @@ np(S) = S.center + [0, 0, 1]
             comp = rx * rz
             @test comp(P) ≈ rx(rz(P))
         end
+    end
+
+    @testset "BaseMotions Edge Cases" begin
+        B_south = [0.0, 0.0, -1.0]
+        rot = MobiusSphere.Btonorth(B_south)
+        @test rot * B_south ≈ [0.0, 0.0, 1.0] atol=NUM_TOL
+        I3 = Matrix{eltype(rot)}(I, 3, 3)
+        @test rot' * rot ≈ I3 atol=NUM_TOL
+
+        tr = MobiusSphere.Gtoone_step1(B_south, B_south)
+        @test tr ≈ zeros(3) atol=NUM_TOL
     end
 
     @testset "Mobius to Rigid Transformation" begin
