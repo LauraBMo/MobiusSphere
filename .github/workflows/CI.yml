@@ -41,7 +41,7 @@ jobs:
         #
       - name: Install dependencies from GitHub
         run: |
-          julia --project=. -e 'using Pkg; Pkg.develop([PackageSpec(url="https://github.com/LauraBMo/MobiusTransformations.jl"), PackageSpec(url="https://github.com/LauraBMo/NemoUtils.jl")])'
+          julia --project=. -e 'using Pkg; Pkg.develop([PackageSpec(url="https://github.com/LauraBMo/MobiusTransformations.git"), PackageSpec(url="https://github.com/LauraBMo/NemoUtils.git")])'
         shell: bash
         # Run your tests manually using julia -e or julia --project=... -e ...
       - name: Run Tests
