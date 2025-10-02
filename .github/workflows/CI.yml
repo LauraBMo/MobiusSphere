@@ -38,6 +38,11 @@ jobs:
       - uses: julia-actions/cache@v2
         # Install the GitHub dependency (NemoUtils) BEFORE instantiating/testing.
         # This step ensures the unregistered package is available in the environment [[24]].
+        #
+      - name: Install MobiusTransformations from GitHub
+        run: |
+          julia -e 'using Pkg; Pkg.add(url="https://github.com/LauraBMo/MobiusTransformations.git");'
+        shell: bash
       - name: Install NemoUtils from GitHub
         run: |
           julia -e 'using Pkg; Pkg.add(url="https://github.com/LauraBMo/NemoUtils.git");'
