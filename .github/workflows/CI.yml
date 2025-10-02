@@ -39,13 +39,9 @@ jobs:
         # Install the GitHub dependency (NemoUtils) BEFORE instantiating/testing.
         # This step ensures the unregistered package is available in the environment [[24]].
         #
-      - name: Install MobiusTransformations from GitHub
+      - name: Install dependencies from GitHub
         run: |
-          julia --project=. -e 'using Pkg; Pkg.add(url="https://github.com/LauraBMo/MobiusTransformations.git");'
-        shell: bash
-      - name: Install NemoUtils from GitHub
-        run: |
-          julia --project=. -e 'using Pkg; Pkg.add(url="https://github.com/LauraBMo/NemoUtils.git");'
+          julia --project=. -e 'using Pkg; Pkg.develop([PackageSpec(url="https://github.com/LauraBMo/MobiusTransformations.jl"), PackageSpec(url="https://github.com/LauraBMo/NemoUtils.jl")])'
         shell: bash
         # Run your tests manually using julia -e or julia --project=... -e ...
       - name: Run Tests
