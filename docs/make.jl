@@ -8,7 +8,7 @@ makedocs(;
     authors="LauBMo <laurea987@gmail.com> and contributors",
     sitename="MobiusSphere.jl",
     format=Documenter.HTML(;
-        canonical="https://LauraBMo.github.io/MobiusSphere.jl",
+        canonical="https://LauraBMo.github.io/MobiusSphere",
         edit_link="main",
         assets=String[],
     ),
@@ -18,6 +18,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/LauraBMo/MobiusSphere.jl",
+    repo="github.com/LauraBMo/MobiusSphere",
     devbranch="main",
 )

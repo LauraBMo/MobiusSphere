@@ -4,7 +4,7 @@ CurrentModule = MobiusSphere
 
 # MobiusSphere
 
-Documentation for [MobiusSphere](https://github.com/LauraBMo/MobiusSphere.jl).
+Documentation for [MobiusSphere](https://github.com/LauraBMo/MobiusSphere).
 
 ```@index
 ```

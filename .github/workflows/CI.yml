@@ -40,15 +40,18 @@ jobs:
         # This step ensures the unregistered package is available in the environment [[24]].
         #
       - name: Install dependencies from GitHub
+        shell: julia --project=. --color=yes {0}
         run: |
-          julia --project=. -e 'using Pkg; Pkg.develop([PackageSpec(url="https://github.com/LauraBMo/MobiusTransformations.git"), PackageSpec(url="https://github.com/LauraBMo/NemoUtils.git")])'
-        shell: bash
+          Pkg.develop(
+          [PackageSpec(url="https://github.com/LauraBMo/MobiusTransformations.git"),
+          PackageSpec(url="https://github.com/LauraBMo/NemoUtils.git")])
         # Run your tests manually using julia -e or julia --project=... -e ...
       - name: Run Tests
+        shell: julia --project=. --color=yes {0}
         run: |
-          julia --project=. -e 'using Pkg; Pkg.test("MobiusSphere")'
-        shell: bash
-      # - uses: julia-actions/julia-runtest@v1
+          using Pkg
+          Pkg.test("MobiusSphere")
+          # - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v4
         with:
@@ -68,6 +71,13 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v2
+      - name: Install dependencies from GitHub
+        shell: julia --project=. --color=yes {0}
+        run: |
+          Pkg.develop(
+          [PackageSpec(url="https://github.com/LauraBMo/MobiusTransformations.git"),
+          PackageSpec(url="https://github.com/LauraBMo/NemoUtils.git")])
+        # Run your tests manually using julia -e or julia --project=... -e ...
       - name: Configure doc environment
         shell: julia --project=docs --color=yes {0}
         run: |
