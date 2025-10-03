@@ -81,10 +81,14 @@ function Gtoone_step2(zg)
     #      sin(θ)  cos(θ) 0;
     #      0       0      1]
     d = complex_normal_form(_norm(x, y))
+    if _approx_zero(d)
+        return I(x)
+    end
     M = [x y 0;
          -y x 0;
-         0 0 0]
-    rot = inv(d).*M
-    M[3, 3] = 1
+         0 0 d]
+    rot = inv(d) .* M
+    # Ensure numerical stability by projecting back into the reals when applicable.
+    rot = _set(rot)
     return rot
 end
