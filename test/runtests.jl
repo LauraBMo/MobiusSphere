@@ -3,6 +3,8 @@ using Test
 using LinearAlgebra
 # using StaticArrays
 using MobiusSphere
+using Nemo
+import MobiusTransformations as MT
 
 # Tolerance constants
 const NUM_TOL = 1e-12
@@ -75,6 +77,51 @@ np(S) = S.center + [0, 0, 1]
     end
 
     @testset "Mobius to Rigid Transformation" begin
+
+        @testset "Automatic Seed Evaluation" begin
+            s = MobiusSphere.Sphere(Float64)
+            proj = MobiusSphere.StereographicProjection(s)
+            m = MobiusSphere.MobiusTransformation(2.0, 1.0 + 2.0im, 3.0, 4.0)
+
+            z0 = zero(Float64)
+            z1 = one(Float64)
+            z∞ = MT.infinity(Float64)
+
+            R = proj(m(z0))
+            G = proj(m(z1))
+            B = proj(m(z∞))
+
+            manual = MobiusSphere.Mobius_to_rigid!(R, G, B, proj)
+            automatic = MobiusSphere.Mobius_to_rigid!(m, proj)
+
+            @test manual == automatic
+        end
+
+        @testset "Automatic Seed Evaluation with CalciumField" begin
+            K = CalciumField()
+            a = K(2)
+            b = K(1)
+            c = K(3)
+            d = K(4)
+
+            mK = MobiusSphere.MobiusTransformation(a, b, c, d)
+            center = [zero(a), zero(a), zero(a)]
+            sK = MobiusSphere.Sphere(center)
+            projK = MobiusSphere.StereographicProjection(sK)
+
+            z0 = zero(a)
+            z1 = one(a)
+            z∞ = MT.infinity(typeof(z0))
+
+            Rk = projK(mK(z0))
+            Gk = projK(mK(z1))
+            Bk = projK(mK(z∞))
+
+            manualK = MobiusSphere.Mobius_to_rigid!(Rk, Gk, Bk, projK)
+            automaticK = MobiusSphere.Mobius_to_rigid!(mK, projK)
+
+            @test manualK == automaticK
+        end
 
         @testset "Decomposition Verification" begin
             # Test case that previously failed
