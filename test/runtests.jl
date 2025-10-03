@@ -10,12 +10,9 @@ import MobiusTransformations as MT
 const NUM_TOL = 1e-12
 const SPHERE_TOL = 1e-8
 
-np(S) = S.center + [0, 0, 1]
-
 @testset "MobiusSphere Tests" begin
 
     # Standard Riemann sphere
-    s1 = MobiusSphere.Sphere(Float64)
     proj_s1 = MobiusSphere.StereographicProjection(s1)
 
     @testset "Core Functionality" begin

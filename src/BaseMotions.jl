@@ -5,7 +5,7 @@ I(x) = [one(x) zero(x) zero(x);
 
 Z(x) = [zero(x), zero(x), zero(x)]
 
-_set(A) = real.(calcium_to_complex.(A))
+# _set(A) = real.(calcium_to_complex.(A))
 
 function _approx_zero(x)
     ax = abs(x)
@@ -13,6 +13,7 @@ function _approx_zero(x)
     tol = sqrt(eps(float(one(T))))
     return ax <= tol
 end
+
 # Step 1: Rotate B to north pole.
 # axis_rot1 = [-B[2],B[1],0] # = cross(B_rot, SVector(0, 0, 1))
 # angle_rot1 = acos(B[3]) # = angle(B_rot, SVector(0, 0, 1))
@@ -73,7 +74,7 @@ function Gtoone_step1(B, G)
 end
 
 # Step 4: Rotation by -angle(proj(G))
-# We rotate proj(G)∈ S^1, to 1.
+# We rotate proj(G)∈S^1, to 1.
 function Gtoone_step2(zg)
     x, y = reim(zg)
     # θ = -atan(y // x)
@@ -84,11 +85,10 @@ function Gtoone_step2(zg)
     if _approx_zero(d)
         return I(x)
     end
-    M = [x y 0;
-         -y x 0;
-         0 0 d]
-    rot = inv(d) .* M
-    # Ensure numerical stability by projecting back into the reals when applicable.
-    rot = _set(rot)
+    pre_rot = inv(d) .* [x y;
+                         -y x]
+    rot = I(x)
+    rot[1:2, 1:2] = pre_rot
+    # @show rot = _set(rot)
     return rot
 end

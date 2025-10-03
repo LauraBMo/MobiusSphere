@@ -3,6 +3,8 @@ module MobiusSphere
 
 export Mobius_to_rigid!
 
+# using UnPack: @unpack
+
 # using  Nemo:complex_normal_form
 using  Nemo, NemoUtils
 import MobiusTransformations as MT
@@ -61,14 +63,18 @@ function Mobius_to_rigid!(R, G, B, proj)
     return map, tr, points
 end
 
-function Mobius_to_rigid!(m::MT.MobiusTransformation{T}, proj) where T
-    S = promote_type(typeof(m.a), typeof(m.b), typeof(m.c), typeof(m.d))
-    z0 = zero(S)
-    z1 = one(S)
-    z∞ = MT.infinity(S)
-    R = proj(m(z0))
-    G = proj(m(z1))
-    B = proj(m(z∞))
+function Mobius_to_rigid(m::MT.MobiusTransformation{T}, proj = stereo(T)) where T
+    # # Map to origin sphere
+    # R = proj(z0)
+    # G = proj(z1)
+    # B = proj(z∞)
+
+    # Find rigid motion that moves:
+    #   B → north pole of target sphere
+    #   R → projected to zero
+    #   G → projected to one
+    holytrinity = [0, 1, MT.infinity()]
+    R, G, B = proj.(inv(m).(holytrinity))
     return Mobius_to_rigid!(R, G, B, proj)
 end
 
