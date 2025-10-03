@@ -5,8 +5,11 @@ export Mobius_to_rigid!
 
 # using UnPack: @unpack
 
-# using  Nemo:complex_normal_form
 using  Nemo, NemoUtils
+
+@inline __normalize(z::Complex) = z
+@inline __normalize(x::Real) = x
+@inline __normalize(z) = Nemo.complex_normal_form(z)
 import MobiusTransformations as MT
 
 # For rigid transformations in 3D
@@ -45,7 +48,7 @@ function Mobius_to_rigid!(R, G, B, proj)
 
     print("G to one (step 1)\n")
     tr2 = Gtoone_step1(points[3], points[2])
-    points = [complex_normal_form.(p+tr2) for p in points]
+    points = [__normalize.(p+tr2) for p in points]
     # R, G, B = [tr2].+[R, G, B]
     temp_proj = MT.stereo(tr1+tr2)
     zg = temp_proj(points[2])
