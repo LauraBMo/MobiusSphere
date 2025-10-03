@@ -4,6 +4,7 @@ authors = ["LauBMo <laurea987@gmail.com> and contributors"]
 version = "1.0.0-DEV"
 
 [deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MobiusTransformations = "4b09bada-36b4-4fc6-9b7c-f286cea146ee"
 Nemo = "2edaba10-b0f1-5616-af89-8c11ac63239a"
 NemoUtils = "36cc3343-9759-42d5-9715-21f2490c7e35"
