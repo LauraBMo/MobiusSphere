@@ -83,25 +83,31 @@ function Mobius_to_rigid(m::MT.MobiusTransformation{T}) where T
     return Mobius_to_rigid!(R, G, B, proj)
 end
 
-function rigid_to_Mobius(Rot, Trans)
-    base_points = holytrinity()
-    im_points = ([Rot].*base_points) .+ [Trans]
-    im_ht = stereo(Trans).(im_points)
-    return MT.Mobius(im_ht)
+function rigid_to_Mobius(rigid_motion, source=[0, 1, im])
+    # We can set any source points.
+    p = MT.stereo()
+    source_sphere = p.(source)
+
+    # Compute target sphere points.
+    target_sphere = map(rigid_motion, source_sphere)
+
+    # Come back to complex plane (now we are centred at T)
+    q = MT.stereo(rigid_motion(Z(0)))
+    target = q.(target_sphere)
+
+    return MT.Möbius(source, target)
 end
 
-# 3D image of the standard base points.
+"""
+    rigid_to_Mobius(Q, T, source=[0, 1, im])
 
-__holytrinity() = [0, 1, MT.infinity()]
+Given a 3D rotation `Q` (so, `Q*Q'=Id` and `det(Q)=1`) and a translation vector `T`, returns the Mobius transformation `m` corresponding to rotate the standard Riemann sphere by `Q` and translate it by `T`.
+That is, the map `m` is defined as `m(z) = p_T(Q*p(z)+T)`, where `p = stereo()` is the standard stereographic projection and `p_T = stereo(T)` stereo projection centred at `T`.
+"""
+rigid_to_Mobius(Rot::AbstractMatrix, Trans::AbstractVecOrMat, source = [0, 1, im]) =
+    rigid_to_Mobius(pt -> Rot*pt + Trans, source)
 
-holytrinity(m::MT.MobiusTransformation,
-            proj::MT.StereographicProjection) = proj.(m.(__holytrinity()))
-
-holytrinity(m::MT.MobiusTransformation) = holytrinity(m, stereo())
-holytrinity(proj::MT.StereographicProjection) = proj(__holytrinity())
-holytrinity() = holytrinity(stereo())
-
-# # Helper function: rotation matrix from axis-angle
+# Helper function: rotation matrix from axis-angle
 # function rotation_matrix(axis::AbstractVector, θ::Real)
 #     u = normalize(axis)
 #     ux, uy, uz = u
