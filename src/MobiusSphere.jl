@@ -27,8 +27,8 @@ function Mobius_to_rigid!(R, G, B, proj)
 
     # Find rigid motion 'R, T' that moves:
     #   B → north pole of target sphere
-    #   R → projected to zero
-    #   G → projected to one
+    #   R → projected to zero from traget sphere
+    #   G → projected to one from target sphere
 
     # # Then 'R, T' correspoinds to Mobius such that
     # sends z0, z1, z∞ to 0, 1, ∞; which is 'm'.
@@ -69,7 +69,7 @@ function Mobius_to_rigid!(R, G, B, proj)
     return map, tr
 end
 
-function Mobius_to_rigid(m::MT.MobiusTransformation{T}) where T
+function Mobius_to_rigid(m::MT.MobiusTransformation{T}, source = [0, 1, 1*im]) where T
     # # Map to origin sphere
     # R = proj(z0)
     # G = proj(z1)
@@ -79,11 +79,15 @@ function Mobius_to_rigid(m::MT.MobiusTransformation{T}) where T
     #   B → north pole of target sphere
     #   R → projected to zero
     #   G → projected to one
-    R, G, B = holytrinity(inv(m))
+    m0 = MT.Mobius(source) # 0, 1, inf -> source
+    # Now m0*m sends: zr, zg, zb -> 0, 1, inf -> source
+    proj = MT.stereo()
+    # R, G, B = proj.(inv(m).(inv(m0).(source)))
+    R, G, B = proj.(inv(m0*m).(source))
     return Mobius_to_rigid!(R, G, B, proj)
 end
 
-function rigid_to_Mobius(rigid_motion, source=[0, 1, im])
+function rigid_to_Mobius(rigid_motion, source=[0, 1, 1*im]) # to get Complex{Int} type.
     # We can set any source points.
     p = MT.stereo()
     source_sphere = p.(source)
