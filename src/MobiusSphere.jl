@@ -69,6 +69,11 @@ function Mobius_to_rigid!(R, G, B, proj)
     return map, tr
 end
 
+"""
+    Mobius_to_rigid(m, source=[0, 1, 1*im])
+
+Given a Mobius transformation `m` returns `Q, T` (`Q` rotation matrix and `T` Translation vector) such that `m(z) = p_T(Q*p(z)+T)`, where `p = stereo()` is the standard stereographic projection and `p_T = stereo(T)` stereo projection centred at `T`.
+"""
 function Mobius_to_rigid(m::MT.MobiusTransformation{T}, source = [0, 1, 1*im]) where T
     # # Map to origin sphere
     # R = proj(z0)
@@ -103,12 +108,12 @@ function rigid_to_Mobius(rigid_motion, source=[0, 1, 1*im]) # to get Complex{Int
 end
 
 """
-    rigid_to_Mobius(Q, T, source=[0, 1, im])
+    rigid_to_Mobius(Q, T, source=[0, 1, 1*im])
 
 Given a 3D rotation `Q` (so, `Q*Q'=Id` and `det(Q)=1`) and a translation vector `T`, returns the Mobius transformation `m` corresponding to rotate the standard Riemann sphere by `Q` and translate it by `T`.
 That is, the map `m` is defined as `m(z) = p_T(Q*p(z)+T)`, where `p = stereo()` is the standard stereographic projection and `p_T = stereo(T)` stereo projection centred at `T`.
 """
-rigid_to_Mobius(Rot::AbstractMatrix, Trans::AbstractVecOrMat, source = [0, 1, im]) =
+rigid_to_Mobius(Rot::AbstractMatrix, Trans::AbstractVecOrMat, source = [0, 1, 1*im]) =
     rigid_to_Mobius(pt -> Rot*pt + Trans, source)
 
 # Helper function: rotation matrix from axis-angle

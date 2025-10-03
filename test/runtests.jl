@@ -76,7 +76,7 @@ rotation_about_y(θ) = [cos(θ) 0 sin(θ);
                 base_Gc = [oneC, zeroC, zeroC]
                 base_Bc = [zeroC, zeroC, oneC]
 
-                θ = const_pi(C)//4
+                θ = const_pi(C) // 4
                 rot = rotation_about_y(θ)
                 # rot = [zeroC zeroC oneC;
                 #         zeroC oneC zeroC;
@@ -129,6 +129,9 @@ rotation_about_y(θ) = [cos(θ) 0 sin(θ);
                 map, tr_total = MobiusSphere.Mobius_to_rigid(m, [zeroC, oneC, onei(C)])
                 @test Nemo.matrix(C, map) == Nemo.matrix(C, rot)
                 @test all(t -> t == zeroC, tr_total)
+
+                m2 = MobiusSphere.rigid_to_Mobius(map, tr_total, [zeroC, oneC, onei(C)])
+                @test m == m2
         end
 end
 
