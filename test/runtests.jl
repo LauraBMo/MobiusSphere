@@ -60,6 +60,53 @@ rotation_about_y(θ) = [cos(θ) 0 sin(θ);
         map, tr = MobiusSphere.Mobius_to_rigid!(R, G, B, proj)
         @test sum(abs2, map - rotation_about_y(-θ)) ≈ 0 atol=NUM_TOL
     end
+
+    @testset "CalciumField support" begin
+        C = CalciumField()
+        zeroC = C(0)
+        oneC = C(1)
+
+        base_Rc = [zeroC, zeroC, -oneC]
+        base_Gc = [oneC, zeroC, zeroC]
+        base_Bc = [zeroC, zeroC, oneC]
+
+        rot = [zeroC zeroC oneC;
+               zeroC oneC zeroC;
+               -oneC zeroC zeroC]
+        tilted_Bc = rot * base_Bc
+        rot_back = MobiusSphere.Btonorth(tilted_Bc)
+        @test rot_back * tilted_Bc == base_Bc
+        @test det(rot_back) == oneC
+
+        zr = C("5/4 - 1/2*I")
+        tr = MobiusSphere.Rtozero(zr)
+        @test tr == [-C("5/4"), C("1/2"), zeroC]
+
+        Gc = [C("2/5"), C("3/5"), C("1/5")]
+        tr_g = MobiusSphere.Gtoone_step1(base_Bc, Gc)
+        @test cross(base_Bc, tr_g) == [zeroC, zeroC, zeroC]
+        shifted_G = MobiusSphere.__normalize.(Gc .+ tr_g)
+        shifted_B = MobiusSphere.__normalize.(base_Bc .+ tr_g)
+        local_proj = MT.stereo(tr_g)
+        zg = local_proj(shifted_G)
+        zb = local_proj(shifted_B)
+        @test MobiusSphere.__normalize(abs(zg)) == oneC
+        @test isinf(zb)
+
+        rot_g = MobiusSphere.Gtoone_step2(C("3/5 + 4/5*I"))
+        vec = [C("3/5"), C("4/5"), zeroC]
+        rotated_vec = rot_g * vec
+        @test rotated_vec[1] == oneC
+        @test rotated_vec[2] == zeroC
+
+        R = rot * base_Rc
+        G = rot * base_Gc
+        B = rot * base_Bc
+
+        map, tr_total = MobiusSphere.Mobius_to_rigid!(R, G, B, proj)
+        @test map == rot'
+        @test all(t -> t == zeroC, tr_total)
+    end
 end
 
 println("All tests passed!")
