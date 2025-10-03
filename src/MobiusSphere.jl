@@ -7,6 +7,10 @@ export Mobius_to_rigid!
 
 using Nemo, NemoUtils
 
+@inline _cross(u, v) = [u[2] * v[3] - u[3] * v[2],
+                       u[3] * v[1] - u[1] * v[3],
+                       u[1] * v[2] - u[2] * v[1]]
+
 @inline __normalize(z::Number) = z
 @inline __normalize(z) = Nemo.complex_normal_form(z)
 
@@ -115,6 +119,56 @@ That is, the map `m` is defined as `m(z) = p_T(Q*p(z)+T)`, where `p = stereo()` 
 """
 rigid_to_Mobius(Rot::AbstractMatrix, Trans::AbstractVecOrMat, source = [0, 1, 1*im]) =
     rigid_to_Mobius(pt -> Rot*pt + Trans, source)
+
+function rotation_axis_angle(R::AbstractMatrix)
+    size(R) == (3, 3) || throw(DimensionMismatch("rotation matrices must be 3×3"))
+    x = R[1, 1]
+    Id = I(x)
+    tr = R[1, 1] + R[2, 2] + R[3, 3]
+    one_x = one(x)
+    cosθ = __normalize((tr - one_x) / 2)
+    if cosθ isa AbstractFloat
+        cosθ = clamp(cosθ, -one_x, one_x)
+    end
+    axis_skew = [R[3, 2] - R[2, 3], R[1, 3] - R[3, 1], R[2, 1] - R[1, 2]]
+    axis_skew_sq = __normalize(axis_skew[1]^2 + axis_skew[2]^2 + axis_skew[3]^2)
+    sinθ = __normalize(sqrt(axis_skew_sq) / 2)
+    if sinθ isa AbstractFloat
+        sinθ = clamp(sinθ, -one_x, one_x)
+    end
+    θ = if Base.hasmethod(atan, Tuple{typeof(sinθ), typeof(cosθ)})
+        atan(sinθ, cosθ)
+    else
+        acos(cosθ)
+    end
+    if _approx_zero(θ)
+        axis = [one_x, zero(x), zero(x)]
+        return axis, zero(θ)
+    end
+    axis = nothing
+    if !_approx_zero(axis_skew_sq)
+        if _approx_zero(sinθ)
+            norm_axis = sqrt(axis_skew_sq)
+            axis = axis_skew ./ norm_axis
+        else
+            axis = axis_skew ./ (2 * sinθ)
+        end
+    else
+        rows = [R[i, :] .- Id[i, :] for i in 1:3]
+        for (i, j) in ((1, 2), (1, 3), (2, 3))
+            candidate = _cross(rows[i], rows[j])
+            if !_approx_zero(candidate[1]^2 + candidate[2]^2 + candidate[3]^2)
+                norm_axis = sqrt(__normalize(candidate[1]^2 + candidate[2]^2 + candidate[3]^2))
+                axis = candidate ./ norm_axis
+                break
+            end
+        end
+    end
+    if axis === nothing
+        axis = [one_x, zero(x), zero(x)]
+    end
+    return __normalize.(axis), θ
+end
 
 # Helper function: rotation matrix from axis-angle
 # function rotation_matrix(axis::AbstractVector, θ::Real)
