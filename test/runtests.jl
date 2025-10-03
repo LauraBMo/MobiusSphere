@@ -62,6 +62,30 @@ rotation_about_y(θ) = [cos(θ) 0 sin(θ);
                 @test sum(abs2, map - rotation_about_y(-θ)) ≈ 0 atol = NUM_TOL
         end
 
+        @testset "Rotation axis-angle" begin
+                θ = π / 3
+                rot = rotation_about_y(θ)
+                axis, angle = MobiusSphere.rotation_axis_angle(rot)
+                @test axis ≈ [0.0, 1.0, 0.0] atol = NUM_TOL
+                @test angle ≈ θ atol = NUM_TOL
+
+                I3 = Matrix{Float64}(I, 3, 3)
+                axis_id, angle_id = MobiusSphere.rotation_axis_angle(I3)
+                @test axis_id ≈ [1.0, 0.0, 0.0] atol = NUM_TOL
+                @test angle_id ≈ 0.0 atol = NUM_TOL
+
+                raw_axis = [1.0, 1.0, 1.0]
+                norm_axis = raw_axis / norm(raw_axis)
+                rot_pi = let x = norm_axis[1], y = norm_axis[2], z = norm_axis[3], c = cos(π), s = sin(π), v = 1 - c
+                        [c + x^2 * v    x * y * v - z * s  x * z * v + y * s;
+                         y * x * v + z * s  c + y^2 * v    y * z * v - x * s;
+                         z * x * v - y * s  z * y * v + x * s  c + z^2 * v]
+                end
+                axis_pi, angle_pi = MobiusSphere.rotation_axis_angle(rot_pi)
+                @test isapprox(angle_pi, π; atol = NUM_TOL)
+                @test isapprox(axis_pi, norm_axis; atol = NUM_TOL) || isapprox(axis_pi, -norm_axis; atol = NUM_TOL)
+        end
+
         @testset "CalciumField support" begin
                 C = CalciumField(extended=true)
                 zeroC = C(0)
