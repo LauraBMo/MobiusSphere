@@ -42,6 +42,7 @@ jobs:
       - name: Install dependencies from GitHub
         shell: julia --project=. --color=yes {0}
         run: |
+          using Pkg
           Pkg.develop(
           [PackageSpec(url="https://github.com/LauraBMo/MobiusTransformations.git"),
           PackageSpec(url="https://github.com/LauraBMo/NemoUtils.git")])
@@ -74,6 +75,7 @@ jobs:
       - name: Install dependencies from GitHub
         shell: julia --project=. --color=yes {0}
         run: |
+          using Pkg
           Pkg.develop(
           [PackageSpec(url="https://github.com/LauraBMo/MobiusTransformations.git"),
           PackageSpec(url="https://github.com/LauraBMo/NemoUtils.git")])
