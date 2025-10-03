@@ -63,7 +63,7 @@ _norm(a, b) = sqrt(a^2 + b^2)
 function Gtoone_step1(B, G)
     a, b, c = B
     x, y, z = G
-    d = complex_normal_form(_norm(_det(x, z, a, c), _det(y, z, b, c)))
+    d = __normalize(_norm(_det(x, z, a, c), _det(y, z, b, c)))
     if _approx_zero(d)
         return Z(x)
     end
@@ -81,7 +81,7 @@ function Gtoone_step2(zg)
     # M = [cos(θ) -sin(θ) 0;
     #      sin(θ)  cos(θ) 0;
     #      0       0      1]
-    d = complex_normal_form(_norm(x, y))
+    d = __normalize(_norm(x, y))
     if _approx_zero(d)
         return I(x)
     end

@@ -5,8 +5,11 @@ export Mobius_to_rigid!
 
 # using UnPack: @unpack
 
-# using  Nemo:complex_normal_form
-using  Nemo, NemoUtils
+using Nemo, NemoUtils
+
+@inline __normalize(z::Number) = z
+@inline __normalize(z) = Nemo.complex_normal_form(z)
+
 import MobiusTransformations as MT
 
 # For rigid transformations in 3D
@@ -15,17 +18,20 @@ import MobiusTransformations as MT
 
 include("BaseMotions.jl")
 
-# Decompose Möbius to rigid transformation
+# Decompose Möbius transformation 'm' to rigid transformation 'R, T'.
 function Mobius_to_rigid!(R, G, B, proj)
     # # Map to origin sphere
-    # R = proj(z0)
-    # G = proj(z1)
-    # B = proj(z∞)
+    # R = proj(z0) # z0 = inv(m)(0)
+    # G = proj(z1) # z1 = inv(m)(1)
+    # B = proj(z∞) # z∞ = inv(m)(∞)
 
-    # Find rigid motion that moves:
+    # Find rigid motion 'R, T' that moves:
     #   B → north pole of target sphere
     #   R → projected to zero
     #   G → projected to one
+
+    # # Then 'R, T' correspoinds to Mobius such that
+    # sends z0, z1, z∞ to 0, 1, ∞; which is 'm'.
 
     # Step 1: Rotate B to north pole.
     # axis_rot1 = [-B[2],B[1],0] # = cross(B_rot, SVector(0, 0, 1))
@@ -45,7 +51,7 @@ function Mobius_to_rigid!(R, G, B, proj)
 
     # print("G to one (step 1)\n")
     tr2 = Gtoone_step1(points[3], points[2])
-    points = [complex_normal_form.(p+tr2) for p in points]
+    points = [__normalize.(p+tr2) for p in points]
     # R, G, B = [tr2].+[R, G, B]
     temp_proj = MT.stereo(tr1+tr2)
     zg = temp_proj(points[2])
@@ -60,7 +66,7 @@ function Mobius_to_rigid!(R, G, B, proj)
     tr = rot2*(tr1 + tr2)
     # print("Final Rotation")
     map = rot2 * rot1
-    return map, tr, points
+    return map, tr
 end
 
 function Mobius_to_rigid(m::MT.MobiusTransformation{T}) where T
@@ -77,25 +83,31 @@ function Mobius_to_rigid(m::MT.MobiusTransformation{T}) where T
     return Mobius_to_rigid!(R, G, B, proj)
 end
 
-function rigid_to_Mobius(Rot, Trans)
-    base_points = holytrinity()
-    im_points = ([Rot].*base_points) .+ [Trans]
-    im_ht = stereo(Trans).(im_points)
-    return MT.Mobius(im_ht)
+function rigid_to_Mobius(rigid_motion, source=[0, 1, im])
+    # We can set any source points.
+    p = MT.stereo()
+    source_sphere = p.(source)
+
+    # Compute target sphere points.
+    target_sphere = map(rigid_motion, source_sphere)
+
+    # Come back to complex plane (now we are centred at T)
+    q = MT.stereo(rigid_motion(Z(0)))
+    target = q.(target_sphere)
+
+    return MT.Möbius(source, target)
 end
 
-# 3D image of the standard base points.
+"""
+    rigid_to_Mobius(Q, T, source=[0, 1, im])
 
-__holytrinity() = [0, 1, MT.infinity()]
+Given a 3D rotation `Q` (so, `Q*Q'=Id` and `det(Q)=1`) and a translation vector `T`, returns the Mobius transformation `m` corresponding to rotate the standard Riemann sphere by `Q` and translate it by `T`.
+That is, the map `m` is defined as `m(z) = p_T(Q*p(z)+T)`, where `p = stereo()` is the standard stereographic projection and `p_T = stereo(T)` stereo projection centred at `T`.
+"""
+rigid_to_Mobius(Rot::AbstractMatrix, Trans::AbstractVecOrMat, source = [0, 1, im]) =
+    rigid_to_Mobius(pt -> Rot*pt + Trans, source)
 
-holytrinity(m::MT.MobiusTransformation,
-            proj::MT.StereographicProjection) = proj.(m.(__holytrinity()))
-
-holytrinity(m::MT.MobiusTransformation) = holytrinity(m, stereo())
-holytrinity(proj::MT.StereographicProjection) = proj(__holytrinity())
-holytrinity() = holytrinity(stereo())
-
-# # Helper function: rotation matrix from axis-angle
+# Helper function: rotation matrix from axis-angle
 # function rotation_matrix(axis::AbstractVector, θ::Real)
 #     u = normalize(axis)
 #     ux, uy, uz = u
