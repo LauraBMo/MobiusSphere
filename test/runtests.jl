@@ -74,6 +74,15 @@ np(S) = S.center + [0, 0, 1]
 
         tr = MobiusSphere.Gtoone_step1(B_south, B_south)
         @test tr ≈ zeros(3) atol=NUM_TOL
+
+        @testset "Gtoone_step2 Rotation" begin
+            rot = MobiusSphere.Gtoone_step2(complex(0.6, -0.8))
+            P = [0.3, -0.4, 0.5]
+            rotated = rot * P
+            rot_I = Matrix{eltype(rot)}(I, 3, 3)
+            @test rot' * rot ≈ rot_I atol=NUM_TOL
+            @test abs(rotated[3]) ≈ abs(P[3]) atol=NUM_TOL
+        end
     end
 
     @testset "Mobius to Rigid Transformation" begin
