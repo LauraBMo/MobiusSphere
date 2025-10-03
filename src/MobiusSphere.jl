@@ -63,7 +63,7 @@ function Mobius_to_rigid!(R, G, B, proj)
     return map, tr, points
 end
 
-function Mobius_to_rigid(m::MT.MobiusTransformation{T}, proj = stereo(T)) where T
+function Mobius_to_rigid(m::MT.MobiusTransformation{T}) where T
     # # Map to origin sphere
     # R = proj(z0)
     # G = proj(z1)
@@ -73,10 +73,27 @@ function Mobius_to_rigid(m::MT.MobiusTransformation{T}, proj = stereo(T)) where 
     #   B → north pole of target sphere
     #   R → projected to zero
     #   G → projected to one
-    holytrinity = [0, 1, MT.infinity()]
-    R, G, B = proj.(inv(m).(holytrinity))
+    R, G, B = holytrinity(inv(m))
     return Mobius_to_rigid!(R, G, B, proj)
 end
+
+function rigid_to_Mobius(Rot, Trans)
+    base_points = holytrinity()
+    im_points = ([Rot].*base_points) .+ [Trans]
+    im_ht = stereo(Trans).(im_points)
+    return MT.Mobius(im_ht)
+end
+
+# 3D image of the standard base points.
+
+__holytrinity() = [0, 1, MT.infinity()]
+
+holytrinity(m::MT.MobiusTransformation,
+            proj::MT.StereographicProjection) = proj.(m.(__holytrinity()))
+
+holytrinity(m::MT.MobiusTransformation) = holytrinity(m, stereo())
+holytrinity(proj::MT.StereographicProjection) = proj(__holytrinity())
+holytrinity() = holytrinity(stereo())
 
 # # Helper function: rotation matrix from axis-angle
 # function rotation_matrix(axis::AbstractVector, θ::Real)
