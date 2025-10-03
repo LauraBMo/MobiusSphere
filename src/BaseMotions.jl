@@ -7,11 +7,23 @@ Z(x) = [zero(x), zero(x), zero(x)]
 
 # _set(A) = real.(calcium_to_complex.(A))
 
+@inline _has_iszero(x) = Base.hasmethod(iszero, Tuple{typeof(x)})
+
 function _approx_zero(x)
+    if _has_iszero(x) && iszero(x)
+        return true
+    end
+
     ax = abs(x)
-    T = typeof(ax)
-    tol = sqrt(eps(float(one(T))))
-    return ax <= tol
+    if _has_iszero(ax) && iszero(ax)
+        return true
+    end
+
+    if ax isa AbstractFloat
+        return ax <= sqrt(eps(ax))
+    end
+
+    return false
 end
 
 # Step 1: Rotate B to north pole.
