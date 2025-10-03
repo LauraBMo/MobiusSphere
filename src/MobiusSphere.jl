@@ -130,17 +130,25 @@ function rotation_axis_angle(R::AbstractMatrix)
     if cosθ isa AbstractFloat
         cosθ = clamp(cosθ, -one_x, one_x)
     end
-    θ = acos(cosθ)
+    axis_skew = [R[3, 2] - R[2, 3], R[1, 3] - R[3, 1], R[2, 1] - R[1, 2]]
+    axis_skew_sq = __normalize(axis_skew[1]^2 + axis_skew[2]^2 + axis_skew[3]^2)
+    sinθ = __normalize(sqrt(axis_skew_sq) / 2)
+    if sinθ isa AbstractFloat
+        sinθ = clamp(sinθ, -one_x, one_x)
+    end
+    θ = if Base.hasmethod(atan, Tuple{typeof(sinθ), typeof(cosθ)})
+        atan(sinθ, cosθ)
+    else
+        acos(cosθ)
+    end
     if _approx_zero(θ)
         axis = [one_x, zero(x), zero(x)]
         return axis, zero(θ)
     end
-    sinθ = sin(θ)
-    axis_skew = [R[3, 2] - R[2, 3], R[1, 3] - R[3, 1], R[2, 1] - R[1, 2]]
     axis = nothing
-    if !_approx_zero(axis_skew[1]^2 + axis_skew[2]^2 + axis_skew[3]^2)
+    if !_approx_zero(axis_skew_sq)
         if _approx_zero(sinθ)
-            norm_axis = sqrt(__normalize(axis_skew[1]^2 + axis_skew[2]^2 + axis_skew[3]^2))
+            norm_axis = sqrt(axis_skew_sq)
             axis = axis_skew ./ norm_axis
         else
             axis = axis_skew ./ (2 * sinθ)
