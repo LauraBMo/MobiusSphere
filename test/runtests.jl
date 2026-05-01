@@ -2,7 +2,7 @@ using Test
 using LinearAlgebra
 using MobiusSphere
 using Nemo
-import MobiusTransformations as MT
+import MobiusSphere.MobiusTransformations as MT
 using Base.MathConstants: π
 
 const NUM_TOL = 1e-12
@@ -95,22 +95,17 @@ rotation_about_y(θ) = [cos(θ) 0 sin(θ);
                 infC = unsigned_infinity(C)
                 MT.set_infinity(infC)
 
-                # 0 = [0, 0, -1], 1 = [1, 0, 0], inf = [0, 0, 1]
                 base_Rc = [zeroC, zeroC, -oneC]
                 base_Gc = [oneC, zeroC, zeroC]
                 base_Bc = [zeroC, zeroC, oneC]
 
                 θ = const_pi(C) // 4
                 rot = rotation_about_y(θ)
-                # rot = [zeroC zeroC oneC;
-                #         zeroC oneC zeroC;
-                #         -oneC zeroC zeroC]
                 tilted_Bc = rot * base_Bc
                 rot_back = MobiusSphere.Btonorth(tilted_Bc)
                 @test rot_back * tilted_Bc == base_Bc
                 @test det(Nemo.matrix(C, rot_back)) == oneC
 
-                # zr = C("5/4 - 1/2*I")
                 zr = _complex(5 // 4, 1 // 2)
                 tr = MobiusSphere.Rtozero(zr)
                 @test tr == [-C(5 // 4), -C(1 // 2), zeroC]
@@ -144,8 +139,7 @@ rotation_about_y(θ) = [cos(θ) 0 sin(θ);
                 projG = proj(G)
                 projB = proj(B)
 
-                m = MT.Mobius(projR, projG, projB) # sends 0, 1, inf -> projR, projG, projB
-                # 0 = [0, 0, -1], 1 = [1, 0, 0], inf = [0, 0, 1]
+                m = MT.Mobius(projR, projG, projB)
                 map, tr_total = MobiusSphere.Mobius_to_rigid(inv(m), [zeroC, oneC, infC])
                 @test Nemo.matrix(C, map) == transpose(Nemo.matrix(C, rot))
                 @test all(t -> t == zeroC, tr_total)
