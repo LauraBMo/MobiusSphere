@@ -10,17 +10,8 @@ Z(x) = [zero(x), zero(x), zero(x)]
 @inline _has_iszero(x) = Base.hasmethod(iszero, Tuple{typeof(x)})
 
 function _approx_zero(x)
-    if _has_iszero(x) && iszero(x)
-        return true
-    end
-
-    ax = abs(x)
-    if _has_iszero(ax) && iszero(ax)
-        return true
-    end
-
-    if ax isa AbstractFloat
-        return ax <= sqrt(eps(ax))
+    if _has_iszero(abs(x))
+        return iszero(x)
     end
 
     return false

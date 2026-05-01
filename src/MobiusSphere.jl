@@ -4,19 +4,20 @@ module MobiusSphere
 export Mobius_to_rigid!
 
 # using UnPack: @unpack
-
-using Nemo, NemoUtils
+# using Nemo, NemoUtils
 
 @inline __normalize(z::Number) = z
 @inline __normalize(z) = Nemo.complex_normal_form(z)
 
-import MobiusTransformations as MT
+# import MobiusTransformations as MT
 
 # For rigid transformations in 3D
 # import CoordinateTransformations as CT
 # import Rotations as RR
 
 include("BaseMotions.jl")
+include("MobiusTransformations.jl")
+include("StereographicProjections.jl")
 
 # Decompose Möbius transformation 'm' to rigid transformation 'R, T'.
 function Mobius_to_rigid!(R, G, B, proj)
@@ -43,6 +44,11 @@ function Mobius_to_rigid!(R, G, B, proj)
     # R, G, B = [rot1].*[R, G, B]
     # all(points[3] .== [0, 0, 1]) |> println
 
+  (if-let ((project (project-current)))
+       (expand-file-name (project-root project))
+       (message "hola")
+       (expand-file-name default-directory))
+
     # print("R to zero\n")
     zr = proj(points[1])
     tr1 = Rtozero(zr)
@@ -66,7 +72,7 @@ function Mobius_to_rigid!(R, G, B, proj)
     tr = rot2*(tr1 + tr2)
     # print("Final Rotation")
     map = rot2 * rot1
-    return map, tr
+    return __normalize(map), __normalize(tr)
 end
 
 """
@@ -74,7 +80,7 @@ end
 
 Given a Mobius transformation `m` returns `Q, T` (`Q` rotation matrix and `T` Translation vector) such that `m(z) = p_T(Q*p(z)+T)`, where `p = stereo()` is the standard stereographic projection and `p_T = stereo(T)` stereo projection centred at `T`.
 """
-function Mobius_to_rigid(m::MT.MobiusTransformation{T}, source = [0, 1, 1*im]) where T
+function Mobius_to_rigid(m::MT.MobiusTransformation{T}, source = (0, 1, 2)) where T
     # # Map to origin sphere
     # R = proj(z0)
     # G = proj(z1)
