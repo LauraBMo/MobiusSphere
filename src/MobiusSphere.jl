@@ -1,6 +1,7 @@
 module MobiusSphere
 
 export Mobius_to_rigid!, Mobius_to_rigid, Mobius_to_rigid_sitting, rigid_to_Mobius, rotation_axis_angle
+export Mobius_to_rot_angle, Mobius_to_rot_angle_sitting
 
 include("BaseMotions.jl")
 
@@ -28,15 +29,14 @@ function Mobius_to_rigid!(R, G, B, proj)
     RGB = [R, G, B]
 
     rot1 = Btonorth(RGB[3])
-    RGB = Ref(rot1) .* RGB               # rotate B to the north pole
+    RGB .= [rot1] .* RGB       # rotate B to the north pole (rot1 on the left)
 
     zr = proj(RGB[1])
     tr1 = Rtozero(zr)
-    RGB = RGB .+ Ref(tr1)                # slide R's projection to 0
+    RGB .+= [tr1]              # slide R's projection to 0
 
     tr2 = Gtoone_step1(RGB[3], RGB[2])
-    RGB = RGB .+ Ref(tr2)                # slide so G's projection lands on |z| = 1
-    __normalize!.(RGB)
+    RGB .+= [tr2]              # slide so G's projection lands on |z| = 1
 
     temp_proj = stereo(tr1 + tr2)
     zg = temp_proj(RGB[2])
@@ -44,27 +44,26 @@ function Mobius_to_rigid!(R, G, B, proj)
 
     tr = rot2 * (tr1 + tr2)
     map = rot2 * rot1
-    return __normalize(map), __normalize(tr)
+    return map, tr
 end
 
 """
-    Mobius_to_rigid(m, source=(0, 1, Inf))
+    Mobius_to_rigid(m)
 
 Given a Möbius transformation `m` returns `Q, T` (rotation matrix and translation vector)
 such that `m(z) = p_T(Q*p(z)+T)`, where `p = stereo()` is the standard stereographic
 projection and `p_T = stereo(T)` is the stereo projection centred at `T`.
 """
-function Mobius_to_rigid(m::MT.MobiusTransformation, source=(0, 1, Inf))
-    proj = MT.stereo()
-    # R, G, B are the sphere pre-images of `source` = (0, 1, ∞). With source = (0, 1, ∞)
-    # the old normalising pre-map `m0 = Mobius(source)` is the identity and drops out
-    # (verified: identical points to the m0 form, to machine zero).
+function Mobius_to_rigid(m::MT.MobiusTransformation)
+    proj = stereo()
+    source = (0, 1, Inf)
+    # R, G, B are the sphere pre-images of `source` = (0, 1, ∞).
     R, G, B = proj.(inv(m).(source))
     return Mobius_to_rigid!(R, G, B, proj)
 end
 
 """
-    Mobius_to_rigid_sitting(m, source=(0, 1, Inf))
+    Mobius_to_rigid_sitting(m)
 
 Like [`Mobius_to_rigid`](@ref), but for the unit sphere **sitting on** the projection
 plane (tangent at the south pole, centre one radius above the plane) instead of centred
@@ -80,13 +79,44 @@ conjugated by the 2× dilation (`g(z) = m(2z)/2`), decomposed on the centred sph
 the translation is doubled (the rotation is scale-invariant). Verified to machine precision
 against the sitting-sphere caustic for the accidental maps.
 """
-function Mobius_to_rigid_sitting(m::MT.MobiusTransformation, source=(0, 1, Inf))
+function Mobius_to_rigid_sitting(m::MT.MobiusTransformation)
     g_of(z) = m(2z) / 2                        # D_{1/2} ∘ m ∘ D_2  (tangent = 2× equatorial)
     zs = ComplexF64[1, im, -1]
     g  = Möbius(zs, g_of.(zs))
-    Q, T = Mobius_to_rigid(g, source)
+    Q, T = Mobius_to_rigid(g)
     return Q, 2 .* T
 end
+
+# Complex (Q, T) from a decomposition → the real axis–angle + translation a render
+# needs, plus the imaginary residual as a "is this a genuine real motion?" diagnostic
+# (lost once we take real parts, so it is reported here where the complex Q, T exist).
+function _rot_angle_result(Q, T)
+    imerr = max(maximum(abs, imag.(Q)), maximum(abs, imag.(collect(T))))
+    v, θ = rotation_axis_angle(real.(Q))
+    return (v = Float64.(real.(collect(v))),
+            θ = Float64(real(θ)),
+            t = Float64.(real.(collect(T))),
+            imag_error = imerr)
+end
+
+"""
+    Mobius_to_rot_angle(m) -> (; v, θ, t, imag_error)
+
+The rigid motion realizing Möbius `m`, as the axis–angle rotation plus translation a
+render consumes: unit rotation axis `v` (z-up), angle `θ` in radians, translation `t`.
+Wraps [`Mobius_to_rigid`](@ref) then [`rotation_axis_angle`](@ref) and takes real parts;
+`imag_error` is the largest imaginary residual of the raw complex `(Q, T)` — ≈ 0 exactly
+when `m` is a genuine real Euclidean motion (e.g. a map fixing `|z| = 1` setwise).
+"""
+Mobius_to_rot_angle(m::MT.MobiusTransformation) = _rot_angle_result(Mobius_to_rigid(m)...)
+
+"""
+    Mobius_to_rot_angle_sitting(m) -> (; v, θ, t, imag_error)
+
+Like [`Mobius_to_rot_angle`](@ref) but for the unit sphere **sitting on** the plane
+([`Mobius_to_rigid_sitting`](@ref)) — the convention the caustic render uses.
+"""
+Mobius_to_rot_angle_sitting(m::MT.MobiusTransformation) = _rot_angle_result(Mobius_to_rigid_sitting(m)...)
 
 function rigid_to_Mobius(rigid_motion, source=[0, 1, 1*im])
     p = MT.stereo()
